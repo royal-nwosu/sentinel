@@ -1,0 +1,35 @@
+[
+  {
+    "event_id": "EQ001",
+    "name": "Great Kanto Earthquake",
+    "type": "Earthquake",
+    "region": "Kanto",
+    "country": "Japan",
+    "date": "1923-09-01",
+    "magnitude": 7.9,
+    "casualties": 142800,
+    "status": "Inactive"
+  },
+  {
+    "event_id": "HU001",
+    "name": "Hurricane Katrina",
+    "type": "Hurricane",
+    "region": "Gulf Coast",
+    "country": "USA",
+    "date": "2005-08-29",
+    "magnitude": 5.0,
+    "casualties": 1836,
+    "status": "Inactive"
+  },
+  {
+    "event_id": "WF001",
+    "name": "California Wildfires 2024",
+    "type": "Wildfire",
+    "region": "California",
+    "country": "USA",
+    "date": "2024-07-15",
+    "magnitude": 8.0,
+    "casualties": 0,
+    "status": "Active"
+  }
+]
