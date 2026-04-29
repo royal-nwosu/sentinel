@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentinel | Disaster Tracking System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/index.css">
+</head>
+<body>
+    <div id="login-view" class="view active">
+        <div class="glass-card login-card">
+            <div class="logo">
+                <div class="logo-icon"></div>
+                <h1>Sentinel</h1>
+            </div>
+            <p class="subtitle">Secure Authentication Required</p>
+            <form id="login-form">
+                <div class="input-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" required>
+                </div>
+                <div class="input-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" required>
+                </div>
+                <button type="submit" class="btn-primary">Authenticate</button>
+                <div id="login-error" class="error-msg"></div>
+            </form>
+        </div>
+    </div>
+
+    <div id="dashboard-view" class="view">
+        <nav class="sidebar glass-card">
+            <div class="logo">
+                <div class="logo-icon"></div>
+                <h2>Sentinel</h2>
+            </div>
+            <ul class="nav-links">
+                <li class="active" data-tab="overview">Overview</li>
+                <li data-tab="records">Records</li>
+            </ul>
+            <div class="spacer"></div>
+            <button id="logout-btn" class="btn-secondary">Logout</button>
+        </nav>
+
+        <main class="main-content">
+            <header>
+                <h1 id="page-title">Dashboard Overview</h1>
+                <div class="user-profile">
+                    <div class="avatar">A</div>
+                    <span>Admin</span>
+                </div>
+            </header>
+
+            <!-- Overview Tab -->
+            <div id="tab-overview" class="tab-content active">
+                <div class="stats-grid">
+                    <div class="stat-card glass-card">
+                        <h3>Total Disasters</h3>
+                        <div class="value" id="stat-total">-</div>
+                    </div>
+                    <div class="stat-card glass-card">
+                        <h3>Active Events</h3>
+                        <div class="value active-val" id="stat-active">-</div>
+                    </div>
+                    <div class="stat-card glass-card">
+                        <h3>Highest Magnitude</h3>
+                        <div class="value danger-val" id="stat-mag">-</div>
+                        <div class="sub-value" id="stat-mag-name">-</div>
+                    </div>
+                    <div class="stat-card glass-card">
+                        <h3>Most Affected Region</h3>
+                        <div class="value" id="stat-region">-</div>
+                    </div>
+                </div>
+
+                <div class="glass-card table-container">
+                    <div class="table-header">
+                        <h2>Top 5 Deadliest Disasters</h2>
+                    </div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Event Name</th>
+                                <th>Type</th>
+                                <th>Date</th>
+                                <th>Casualties</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="deadliest-tbody">
+                            <!-- populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Records Tab -->
+            <div id="tab-records" class="tab-content">
+                <div class="glass-card table-container full-height">
+                    <div class="table-header">
+                        <h2>All Disasters</h2>
+                        <div class="actions">
+                            <input type="text" id="search-input" placeholder="Search records...">
+                            <button id="add-btn" class="btn-primary">+ New Record</button>
+                        </div>
+                    </div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Region</th>
+                                <th>Magnitude</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="records-tbody">
+                            <!-- populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div id="modal" class="modal">
+        <div class="modal-content glass-card">
+            <h2 id="modal-title">Add Disaster</h2>
+            <form id="record-form">
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label>Event ID</label>
+                        <input type="text" id="f-id" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Name</label>
+                        <input type="text" id="f-name" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Type</label>
+                        <input type="text" id="f-type" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Region</label>
+                        <input type="text" id="f-region" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Country</label>
+                        <input type="text" id="f-country" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Date (YYYY-MM-DD)</label>
+                        <input type="date" id="f-date" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Magnitude</label>
+                        <input type="number" step="0.1" id="f-mag" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Casualties</label>
+                        <input type="number" id="f-cas" required>
+                    </div>
+                    <div class="input-group" style="grid-column: span 2;">
+                        <label>Status</label>
+                        <select id="f-status">
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" id="cancel-btn">Cancel</button>
+                    <button type="submit" class="btn-primary">Save Record</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
