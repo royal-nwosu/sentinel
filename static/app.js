@@ -1,4 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
+
+    let chartInstance = null;
+
     // Check Auth Status on Load
     fetch('/api/check_auth')
         .then(r => r.json())
@@ -24,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ username, password })
             });
             const data = await res.json();
-            
+
             if (data.success) {
                 errorMsg.textContent = '';
                 showDashboard();
@@ -42,15 +45,19 @@ document.addEventListener('DOMContentLoaded', () => {
         showLogin();
     });
 
-    // Navigation
-    document.querySelectorAll('.nav-links li').forEach(li => {
-        li.addEventListener('click', (e) => {
-            document.querySelectorAll('.nav-links li').forEach(el => el.classList.remove('active'));
+    // Navigation — fix page title on tab switch
+    document.querySelectorAll('.nav-tab').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            
+
             e.target.classList.add('active');
             const tabId = e.target.getAttribute('data-tab');
             document.getElementById('tab-' + tabId).classList.add('active');
+
+            // ── FIX: update page title on tab switch ──
+            const titles = { overview: 'Dashboard Overview', records: 'Records' };
+            document.getElementById('page-title').textContent = titles[tabId] || 'Dashboard';
 
             if (tabId === 'overview') loadDashboard();
             if (tabId === 'records') loadRecords();
@@ -78,33 +85,32 @@ document.addEventListener('DOMContentLoaded', () => {
     // Form Submission (Add/Edit)
     document.getElementById('record-form').addEventListener('submit', async (e) => {
         e.preventDefault();
-        
+
         const event_id = document.getElementById('f-id').value;
         const payload = {
-            event_id: event_id,
-            name: document.getElementById('f-name').value,
-            type: document.getElementById('f-type').value,
-            region: document.getElementById('f-region').value,
-            country: document.getElementById('f-country').value,
-            date: document.getElementById('f-date').value,
-            magnitude: document.getElementById('f-mag').value,
+            event_id,
+            name:       document.getElementById('f-name').value,
+            type:       document.getElementById('f-type').value,
+            region:     document.getElementById('f-region').value,
+            country:    document.getElementById('f-country').value,
+            date:       document.getElementById('f-date').value,
+            magnitude:  document.getElementById('f-mag').value,
             casualties: document.getElementById('f-cas').value,
-            status: document.getElementById('f-status').value
+            status:     document.getElementById('f-status').value
         };
 
         const isEdit = document.getElementById('f-id').readOnly;
-        
-        const url = isEdit ? `/api/disasters/${event_id}` : '/api/disasters';
+        const url    = isEdit ? `/api/disasters/${event_id}` : '/api/disasters';
         const method = isEdit ? 'PUT' : 'POST';
 
         try {
-            const res = await fetch(url, {
-                method: method,
+            const res  = await fetch(url, {
+                method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
             const data = await res.json();
-            
+
             if (data.success) {
                 modal.classList.remove('active');
                 loadDashboard();
@@ -117,6 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // ─────────────────────────────────────────
     function showLogin() {
         document.getElementById('dashboard-view').classList.remove('active');
         document.getElementById('login-view').classList.add('active');
@@ -129,24 +136,26 @@ document.addEventListener('DOMContentLoaded', () => {
         loadRecords();
     }
 
+    // ─────────────────────────────────────────
     async function loadDashboard() {
         const res = await fetch('/api/dashboard');
         if (res.status === 401) return showLogin();
         const data = await res.json();
 
-        document.getElementById('stat-total').textContent = data.total;
+        document.getElementById('stat-total').textContent  = data.total;
         document.getElementById('stat-active').textContent = data.active;
-        
+
         if (data.highest_magnitude) {
-            document.getElementById('stat-mag').textContent = data.highest_magnitude.magnitude;
+            document.getElementById('stat-mag').textContent      = data.highest_magnitude.magnitude;
             document.getElementById('stat-mag-name').textContent = data.highest_magnitude.name;
         } else {
-            document.getElementById('stat-mag').textContent = '-';
+            document.getElementById('stat-mag').textContent      = '-';
             document.getElementById('stat-mag-name').textContent = '-';
         }
-        
+
         document.getElementById('stat-region').textContent = data.most_affected_region;
 
+        // Deadliest table
         const tbody = document.getElementById('deadliest-tbody');
         tbody.innerHTML = '';
         data.deadliest.forEach(d => {
@@ -156,13 +165,88 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${d.name}</td>
                 <td>${d.type}</td>
                 <td>${d.date}</td>
-                <td>${d.casualties}</td>
+                <td>${d.casualties.toLocaleString()}</td>
                 <td><span class="status-badge ${d.status === 'Active' ? 'status-active' : 'status-inactive'}">${d.status}</span></td>
             `;
             tbody.appendChild(tr);
         });
+
+        // ── BAR CHART: casualties by disaster type ──
+        renderBarChart(data.deadliest);
     }
 
+    // ─────────────────────────────────────────
+    function renderBarChart(deadliest) {
+        const ctx = document.getElementById('casualties-chart');
+        if (!ctx) return;
+
+        // Aggregate casualties by type
+        const typeMap = {};
+        deadliest.forEach(d => {
+            if (!d) return;
+            typeMap[d.type] = (typeMap[d.type] || 0) + d.casualties;
+        });
+
+        const labels = Object.keys(typeMap);
+        const values = Object.values(typeMap);
+
+        const colors = [
+            '#72baff',
+            '#6ce0a3',
+            '#ffb347',
+            '#b794f4',
+            '#f6ad55',
+        ];
+
+        // Destroy old chart if exists
+        if (chartInstance) {
+            chartInstance.destroy();
+            chartInstance = null;
+        }
+
+        chartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Total Casualties',
+                    data: values,
+                    backgroundColor: colors.slice(0, labels.length),
+                    borderRadius: 10,
+                    maxBarThickness: 90,
+                    borderSkipped: false,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => ` ${ctx.parsed.y.toLocaleString()} casualties`
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#9fb0cf', font: { family: 'Inter' } },
+                        grid:  { color: 'rgba(255,255,255,0.04)' }
+                    },
+                    y: {
+                        ticks: {
+                            color: '#9fb0cf',
+                            font: { family: 'Inter' },
+                            callback: v => v.toLocaleString()
+                        },
+                        grid: { color: 'rgba(255,255,255,0.05)' }
+                    }
+                }
+            }
+        });
+    }
+
+    // ─────────────────────────────────────────
     async function loadRecords(search = '') {
         const url = search ? `/api/disasters?search=${encodeURIComponent(search)}` : '/api/disasters';
         const res = await fetch(url);
@@ -171,56 +255,68 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const tbody = document.getElementById('records-tbody');
         tbody.innerHTML = '';
-        data.forEach(d => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${d.event_id}</td>
-                <td>${d.name}</td>
-                <td>${d.type}</td>
-                <td>${d.region}</td>
-                <td>${d.magnitude}</td>
-                <td><span class="status-badge ${d.status === 'Active' ? 'status-active' : 'status-inactive'}">${d.status}</span></td>
-                <td>
-                    <button class="action-btn edit" data-id="${d.event_id}">Edit</button>
-                    <button class="action-btn delete" data-id="${d.event_id}">Delete</button>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
 
-        // Add event listeners for edit and delete
+        // ── EMPTY STATE ──
+        if (!data.length) {
+            document.getElementById('empty-state').hidden = false;
+        } else {
+            document.getElementById('empty-state').hidden = true;
+            data.forEach(d => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${d.event_id}</td>
+                    <td>${d.name}</td>
+                    <td>${d.type}</td>
+                    <td>${d.region}</td>
+                    <td>${d.magnitude}</td>
+                    <td><span class="status-badge ${d.status === 'Active' ? 'status-active' : 'status-inactive'}">${d.status}</span></td>
+                    <td>
+                        <button class="action-btn edit"   data-id="${d.event_id}">Edit</button>
+                        <button class="action-btn delete" data-id="${d.event_id}">Delete</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        document.getElementById('rec-total').textContent = data.length;
+        document.getElementById('rec-active').textContent = data.filter(r => r.status === 'Active').length;
+        document.getElementById('rec-inactive').textContent = data.filter(r => r.status === 'Inactive').length;
+
         document.querySelectorAll('.action-btn.edit').forEach(btn => {
-            btn.addEventListener('click', (e) => editRecord(e.target.getAttribute('data-id'), data));
+            btn.addEventListener('click', e => editRecord(e.target.getAttribute('data-id'), data));
         });
         document.querySelectorAll('.action-btn.delete').forEach(btn => {
-            btn.addEventListener('click', (e) => deleteRecord(e.target.getAttribute('data-id')));
+            btn.addEventListener('click', e => deleteRecord(e.target.getAttribute('data-id')));
         });
     }
 
+    // ─────────────────────────────────────────
     function editRecord(id, dataList) {
         const record = dataList.find(d => d.event_id === id);
         if (!record) return;
 
-        document.getElementById('f-id').value = record.event_id;
-        document.getElementById('f-id').readOnly = true;
-        document.getElementById('f-name').value = record.name;
-        document.getElementById('f-type').value = record.type;
-        document.getElementById('f-region').value = record.region;
+        document.getElementById('f-id').value      = record.event_id;
+        document.getElementById('f-id').readOnly   = true;
+        document.getElementById('f-name').value    = record.name;
+        document.getElementById('f-type').value    = record.type;
+        document.getElementById('f-region').value  = record.region;
         document.getElementById('f-country').value = record.country;
-        document.getElementById('f-date').value = record.date;
-        document.getElementById('f-mag').value = record.magnitude;
-        document.getElementById('f-cas').value = record.casualties;
-        document.getElementById('f-status').value = record.status;
+        document.getElementById('f-date').value    = record.date;
+        document.getElementById('f-mag').value     = record.magnitude;
+        document.getElementById('f-cas').value     = record.casualties;
+        document.getElementById('f-status').value  = record.status;
 
         document.getElementById('modal-title').textContent = 'Edit Disaster';
         modal.classList.add('active');
     }
 
+    // ─────────────────────────────────────────
     async function deleteRecord(id) {
         if (!confirm(`Are you sure you want to delete ${id}?`)) return;
-        
+
         try {
-            const res = await fetch(`/api/disasters/${id}`, { method: 'DELETE' });
+            const res  = await fetch(`/api/disasters/${id}`, { method: 'DELETE' });
             const data = await res.json();
             if (data.success) {
                 loadDashboard();

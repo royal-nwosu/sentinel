@@ -4,17 +4,67 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sentinel | Disaster Tracking System</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poiret+One&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/index.css">
+    <style>
+        /* ── Login view ── */
+        #login-view {
+            position: relative;
+            overflow: hidden;
+            background: #04080f;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        #planet-canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+        #sentinel-text {
+            position: absolute;
+            font-family: 'Poiret One', sans-serif;
+            font-size: 108px;
+            font-weight: 400;
+            letter-spacing: 0.05em;
+            color: rgba(200, 240, 220, 0.93);
+            text-shadow:
+                0 0 40px rgba(34, 180, 100, 0.5),
+                0 0 100px rgba(20, 100, 200, 0.35);
+            user-select: none;
+            pointer-events: none;
+            z-index: 5;
+            top: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+        }
+        #login-view .glass-card.login-card {
+            position: relative;
+            z-index: 3;
+            margin-top: 60px;
+        }
+        #cloud-canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 4;
+            pointer-events: none;
+        }
+    </style>
 </head>
 <body>
+    <!-- Login View -->
     <div id="login-view" class="view active">
+        <canvas id="planet-canvas"></canvas>
+        <span id="sentinel-text">SENTINEL</span>
         <div class="glass-card login-card">
-            <div class="logo">
-                <div class="logo-icon"></div>
-                <h1>Sentinel</h1>
-            </div>
-            <p class="subtitle">Secure Authentication Required</p>
             <form id="login-form">
                 <div class="input-group">
                     <label for="username">Username</label>
@@ -24,112 +74,143 @@
                     <label for="password">Password</label>
                     <input type="password" id="password" required>
                 </div>
-                <button type="submit" class="btn-primary">Authenticate</button>
+                <button type="submit" class="btn-primary">Access</button>
                 <div id="login-error" class="error-msg"></div>
             </form>
         </div>
+        <canvas id="cloud-canvas"></canvas>
     </div>
 
+    <!-- Dashboard View -->
     <div id="dashboard-view" class="view">
-        <nav class="sidebar glass-card">
-            <div class="logo">
-                <div class="logo-icon"></div>
-                <h2>Sentinel</h2>
-            </div>
-            <ul class="nav-links">
-                <li class="active" data-tab="overview">Overview</li>
-                <li data-tab="records">Records</li>
-            </ul>
-            <div class="spacer"></div>
-            <button id="logout-btn" class="btn-secondary">Logout</button>
-        </nav>
+        <div class="shell">
+            <div class="app">
+                <header class="topbar">
+                    <div class="brand">
+                        <div class="brand-mark"></div>
+                        <h1>Sentinel</h1>
+                    </div>
 
-        <main class="main-content">
-            <header>
-                <h1 id="page-title">Dashboard Overview</h1>
-                <div class="user-profile">
-                    <div class="avatar">A</div>
-                    <span>Admin</span>
-                </div>
-            </header>
+                    <nav class="nav-tabs" aria-label="Primary navigation">
+                        <button class="nav-tab active" data-tab="overview">Overview</button>
+                        <button class="nav-tab" data-tab="records">Records</button>
+                    </nav>
 
-            <!-- Overview Tab -->
-            <div id="tab-overview" class="tab-content active">
-                <div class="stats-grid">
-                    <div class="stat-card glass-card">
-                        <h3>Total Disasters</h3>
-                        <div class="value" id="stat-total">-</div>
+                    <div class="topbar-right">
+                        <div class="avatar">A</div>
+                        <span>Admin</span>
+                        <button id="logout-btn" class="btn-secondary" style="margin-left: 10px; padding: 6px 12px; font-size: 0.8rem;">Logout</button>
                     </div>
-                    <div class="stat-card glass-card">
-                        <h3>Active Events</h3>
-                        <div class="value active-val" id="stat-active">-</div>
-                    </div>
-                    <div class="stat-card glass-card">
-                        <h3>Highest Magnitude</h3>
-                        <div class="value danger-val" id="stat-mag">-</div>
-                        <div class="sub-value" id="stat-mag-name">-</div>
-                    </div>
-                    <div class="stat-card glass-card">
-                        <h3>Most Affected Region</h3>
-                        <div class="value" id="stat-region">-</div>
-                    </div>
-                </div>
+                </header>
 
-                <div class="glass-card table-container">
-                    <div class="table-header">
-                        <h2>Top 5 Deadliest Disasters</h2>
-                    </div>
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Event Name</th>
-                                <th>Type</th>
-                                <th>Date</th>
-                                <th>Casualties</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="deadliest-tbody">
-                            <!-- populated by JS -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Records Tab -->
-            <div id="tab-records" class="tab-content">
-                <div class="glass-card table-container full-height">
-                    <div class="table-header">
-                        <h2>All Disasters</h2>
-                        <div class="actions">
-                            <input type="text" id="search-input" placeholder="Search records...">
-                            <button id="add-btn" class="btn-primary">+ New Record</button>
+                <main class="main">
+                    <!-- Overview Tab -->
+                    <section id="tab-overview" class="tab-content view active">
+                        <div class="page-header">
+                            <div>
+                                <h2 id="page-title">Dashboard Overview</h2>
+                                <p class="subtext">Monitor event activity, casualty distribution, and the most severe records in your system.</p>
+                            </div>
                         </div>
-                    </div>
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Name</th>
-                                <th>Type</th>
-                                <th>Region</th>
-                                <th>Magnitude</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="records-tbody">
-                            <!-- populated by JS -->
-                        </tbody>
-                    </table>
-                </div>
+
+                        <div class="cards">
+                            <div class="card">
+                                <div class="kpi-label">Total Disasters</div>
+                                <div class="kpi-value" id="stat-total">-</div>
+                            </div>
+                            <div class="card">
+                                <div class="kpi-label">Active Events</div>
+                                <div class="kpi-value" style="color: var(--yellow);" id="stat-active">-</div>
+                            </div>
+                            <div class="card">
+                                <div class="kpi-label">Highest Magnitude</div>
+                                <div class="kpi-value" style="color: #ff6f6f;" id="stat-mag">-</div>
+                                <div class="kpi-note" id="stat-mag-name">-</div>
+                            </div>
+                            <div class="card">
+                                <div class="kpi-label">Most Affected Region</div>
+                                <div class="kpi-value" id="stat-region">-</div>
+                            </div>
+                        </div>
+
+                        <div class="panel chart-card">
+                            <h3>Casualties by Disaster Type</h3>
+                            <div class="chart-wrapper">
+                                <canvas id="casualties-chart" height="110"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="panel">
+                            <h3>Top 5 Deadliest Disasters</h3>
+                            <div class="table-wrap">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Event Name</th>
+                                            <th>Type</th>
+                                            <th>Date</th>
+                                            <th>Casualties</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="deadliest-tbody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Records Tab -->
+                    <section id="tab-records" class="tab-content view">
+                        <div class="page-header">
+                            <div>
+                                <h2>Records</h2>
+                                <p class="subtext">Search, review, and manage every disaster record from one place.</p>
+                            </div>
+                        </div>
+
+                        <div class="record-stats">
+                            <div class="record-stat"><span>Total Records</span><strong id="rec-total">-</strong></div>
+                            <div class="record-stat"><span>Active Records</span><strong id="rec-active">-</strong></div>
+                            <div class="record-stat"><span>Inactive Records</span><strong id="rec-inactive">-</strong></div>
+                        </div>
+
+                        <div class="panel">
+                            <div class="records-toolbar">
+                                <h3 style="margin:0;">All Disasters</h3>
+                                <div class="records-tools-right">
+                                    <input id="search-input" class="search" type="search" placeholder="Search records..." />
+                                    <button id="add-btn" class="btn btn-primary">+ New Record</button>
+                                </div>
+                            </div>
+
+                            <div class="table-wrap">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Name</th>
+                                            <th>Type</th>
+                                            <th>Region</th>
+                                            <th>Magnitude</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="records-tbody"></tbody>
+                                </table>
+                            </div>
+
+                            <div id="empty-state" class="empty-state" hidden>No records found.</div>
+                        </div>
+                    </section>
+                </main>
             </div>
-        </main>
+        </div>
     </div>
 
     <!-- Add/Edit Modal -->
     <div id="modal" class="modal">
-        <div class="modal-content glass-card">
+        <div class="modal-content">
             <h2 id="modal-title">Add Disaster</h2>
             <form id="record-form">
                 <div class="form-grid">
@@ -146,8 +227,23 @@
                         <input type="text" id="f-type" required>
                     </div>
                     <div class="input-group">
-                        <label>Region</label>
-                        <input type="text" id="f-region" required>
+                        <label>Region (Time Zone)</label>
+                        <select id="f-region" required>
+                            <option value="" disabled selected>Select a time zone...</option>
+                            <optgroup label="Contiguous US">
+                                <option value="Eastern Time (ET)">Eastern Time (ET) — UTC−5/−4</option>
+                                <option value="Central Time (CT)">Central Time (CT) — UTC−6/−5</option>
+                                <option value="Mountain Time (MT)">Mountain Time (MT) — UTC−7/−6</option>
+                                <option value="Pacific Time (PT)">Pacific Time (PT) — UTC−8/−7</option>
+                            </optgroup>
+                            <optgroup label="US Territories & States">
+                                <option value="Alaska Time (AKT)">Alaska Time (AKT) — UTC−9/−8</option>
+                                <option value="Hawaii-Aleutian Time (HAT)">Hawaii-Aleutian Time (HAT) — UTC−10</option>
+                                <option value="Atlantic Time (AT)">Atlantic Time (AT) — UTC−4/−3</option>
+                                <option value="Samoa Time (SST)">Samoa Time (SST) — UTC−11</option>
+                                <option value="Chamorro Time (ChST)">Chamorro Time (ChST) — UTC+10</option>
+                            </optgroup>
+                        </select>
                     </div>
                     <div class="input-group">
                         <label>Country</label>
@@ -181,6 +277,193 @@
         </div>
     </div>
 
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <script src="/static/app.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+    (function () {
+
+        /* ══ PLANET BLOB ══ */
+        function initPlanet() {
+            const canvas = document.getElementById('planet-canvas');
+            const wrap   = document.getElementById('login-view');
+            const W = wrap.offsetWidth  || window.innerWidth;
+            const H = wrap.offsetHeight || window.innerHeight;
+
+            const renderer = new THREE.WebGLRenderer({ canvas, alpha: false, antialias: true });
+            renderer.setSize(W, H);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.setClearColor(0x04080f, 1);
+
+            const scene  = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(60, W / H, 0.1, 100);
+            camera.position.z = 2.8;
+
+            const geo  = new THREE.SphereGeometry(1.4, 128, 128);
+            const blob = new THREE.Mesh(geo, new THREE.MeshPhongMaterial({
+                color: 0x0a3d6b, emissive: 0x021520,
+                specular: 0x44aaff, shininess: 80,
+                transparent: true, opacity: 0.95,
+            }));
+            scene.add(blob);
+
+            const land1Geo = new THREE.SphereGeometry(0.72, 64, 64);
+            const land1    = new THREE.Mesh(land1Geo, new THREE.MeshPhongMaterial({
+                color: 0x1a6b3a, emissive: 0x0a2e18,
+                specular: 0x88ffcc, shininess: 40,
+                transparent: true, opacity: 0.9,
+            }));
+            land1.position.set(0.28, 0.22, 0.40);
+            scene.add(land1);
+
+            const land2Geo = new THREE.SphereGeometry(0.46, 64, 64);
+            const land2    = new THREE.Mesh(land2Geo, new THREE.MeshPhongMaterial({
+                color: 0x228b4a, emissive: 0x0f3d22,
+                specular: 0x66ffaa, shininess: 50,
+                transparent: true, opacity: 0.85,
+            }));
+            land2.position.set(-0.35, -0.15, 0.52);
+            scene.add(land2);
+
+            const atmGeo = new THREE.SphereGeometry(1.55, 64, 64);
+            const atm    = new THREE.Mesh(atmGeo, new THREE.MeshPhongMaterial({
+                color: 0x0055aa, emissive: 0x001133,
+                transparent: true, opacity: 0.13,
+                side: THREE.FrontSide,
+            }));
+            scene.add(atm);
+
+            scene.add(new THREE.AmbientLight(0x051a2a, 2));
+            const sun = new THREE.DirectionalLight(0xddeeff, 2.2);
+            sun.position.set(3, 2, 2); scene.add(sun);
+            const oceanLight = new THREE.PointLight(0x1166ff, 2.5, 10);
+            oceanLight.position.set(-2, 1, 1.5); scene.add(oceanLight);
+            const greenLight = new THREE.PointLight(0x22cc66, 2, 9);
+            greenLight.position.set(1, -2, 1); scene.add(greenLight);
+            const rimLight = new THREE.PointLight(0x00aaff, 1.5, 8);
+            rimLight.position.set(0, 0, -3); scene.add(rimLight);
+
+            const pos     = geo.attributes.position;
+            const origPos = new Float32Array(pos.array);
+            const l1pos   = land1Geo.attributes.position;
+            const origL1  = new Float32Array(l1pos.array);
+            const l2pos   = land2Geo.attributes.position;
+            const origL2  = new Float32Array(l2pos.array);
+
+            function noise(x, y, z, t) {
+                return Math.sin(x*2.1+t*0.5)*Math.cos(y*1.9+t*0.4)*Math.sin(z*2.4+t*0.55)
+                     + Math.sin(x*3.1+t*0.3)*Math.cos(z*2.6+t*0.6)*0.4;
+            }
+            function morph(attr, orig, amp, t) {
+                const n = orig.length / 3;
+                for (let i = 0; i < n; i++) {
+                    const ox=orig[i*3], oy=orig[i*3+1], oz=orig[i*3+2];
+                    const d = noise(ox, oy, oz, t) * amp;
+                    const len = Math.sqrt(ox*ox+oy*oy+oz*oz);
+                    attr.array[i*3]   = ox+ox/len*d;
+                    attr.array[i*3+1] = oy+oy/len*d;
+                    attr.array[i*3+2] = oz+oz/len*d;
+                }
+                attr.needsUpdate = true;
+            }
+
+            let t = 0, animId;
+            function animate() {
+                animId = requestAnimationFrame(animate);
+                t += 0.01;
+                morph(pos,   origPos, 0.18, t);         geo.computeVertexNormals();
+                morph(l1pos, origL1,  0.12, t*1.1+1.0); land1Geo.computeVertexNormals();
+                morph(l2pos, origL2,  0.10, t*0.9+2.5); land2Geo.computeVertexNormals();
+
+                blob.rotation.y  += 0.003; blob.rotation.x  += 0.0015;
+                land1.rotation.y -= 0.004; land1.rotation.x += 0.002;
+                land1.position.x  = 0.28 + Math.sin(t*0.45)*0.05;
+                land1.position.y  = 0.22 + Math.cos(t*0.38)*0.05;
+                land2.rotation.z += 0.004;
+                land2.position.x  = -0.35 + Math.cos(t*0.55)*0.06;
+                land2.position.y  = -0.15 + Math.sin(t*0.60)*0.06;
+                atm.rotation.y   -= 0.001;
+                oceanLight.position.x = Math.sin(t*0.35)*2.5;
+                oceanLight.position.y = Math.cos(t*0.28)*1.8;
+                greenLight.position.x = Math.cos(t*0.42)*2.0;
+                greenLight.position.y = Math.sin(t*0.50)*2.0;
+                renderer.render(scene, camera);
+            }
+            animate();
+
+            new MutationObserver(() => {
+                document.getElementById('login-view').classList.contains('active')
+                    ? animate() : cancelAnimationFrame(animId);
+            }).observe(document.getElementById('login-view'), { attributes: true, attributeFilter: ['class'] });
+
+            window.addEventListener('resize', () => {
+                const W2 = wrap.offsetWidth  || window.innerWidth;
+                const H2 = wrap.offsetHeight || window.innerHeight;
+                renderer.setSize(W2, H2);
+                camera.aspect = W2 / H2;
+                camera.updateProjectionMatrix();
+            });
+        }
+
+        /* ══ CLOUDS ══ */
+        function initClouds() {
+            const canvas = document.getElementById('cloud-canvas');
+            const ctx    = canvas.getContext('2d');
+            const wrap   = document.getElementById('login-view');
+
+            function resize() {
+                canvas.width  = wrap.offsetWidth  || window.innerWidth;
+                canvas.height = wrap.offsetHeight || window.innerHeight;
+            }
+            resize();
+            window.addEventListener('resize', resize);
+
+            function drawCloud(x, y, scale, alpha) {
+                ctx.save();
+                ctx.globalAlpha = alpha;
+                ctx.fillStyle = 'rgba(210, 235, 255, 1)';
+                ctx.beginPath();
+                const r = 38 * scale;
+                ctx.arc(x,       y,       r,      0, Math.PI*2);
+                ctx.arc(x+r*0.9, y-r*0.3, r*0.75, 0, Math.PI*2);
+                ctx.arc(x+r*1.8, y,       r*0.85, 0, Math.PI*2);
+                ctx.arc(x+r*0.5, y+r*0.5, r*0.7,  0, Math.PI*2);
+                ctx.arc(x+r*1.3, y+r*0.5, r*0.65, 0, Math.PI*2);
+                ctx.fill();
+                ctx.restore();
+            }
+
+            const clouds = [
+                { x: -250, y: 40,  speed: 0.45, scale: 2.2,  alpha: 0.85 },
+                { x: 50,   y: 110, speed: 0.25, scale: 1.8,  alpha: 0.70 },
+                { x: 280,  y: 30,  speed: 0.50, scale: 2.8,  alpha: 0.90 },
+                { x: 480,  y: 140, speed: 0.20, scale: 1.5,  alpha: 0.60 },
+                { x: 650,  y: 60,  speed: 0.35, scale: 2.4,  alpha: 0.80 },
+                { x: 820,  y: 90,  speed: 0.40, scale: 1.9,  alpha: 0.75 },
+                { x: 1000, y: 20,  speed: 0.28, scale: 3.0,  alpha: 0.88 },
+                { x: -100, y: 160, speed: 0.60, scale: 2.6,  alpha: 0.65 },
+                { x: 380,  y: 180, speed: 0.38, scale: 2.0,  alpha: 0.70 },
+                { x: 880,  y: 150, speed: 0.48, scale: 2.5,  alpha: 0.82 }
+            ];
+
+            (function loop() {
+                requestAnimationFrame(loop);
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                const W = canvas.width;
+                for (const c of clouds) {
+                    c.x += c.speed;
+                    if (c.x > W + 200) c.x = -200;
+                    drawCloud(c.x, c.y, c.scale, c.alpha);
+                }
+            })();
+        }
+
+        if (typeof THREE !== 'undefined') initPlanet();
+        else window.addEventListener('load', initPlanet);
+        initClouds();
+
+    })();
+    </script>
 </body>
 </html>
