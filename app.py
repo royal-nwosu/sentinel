@@ -4,7 +4,7 @@ from auth import authenticate
 from manager import SystemManager
 
 app = Flask(__name__)
-app.secret_key = os.urandom(24) # Secure secret key for sessions
+app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24))
 
 manager = SystemManager()
 
